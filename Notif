@@ -67,19 +67,39 @@ local function getColor(colorName, defaultColor)
     end
 end
 
+local activeNotifications = {}
+local notificationId = 0
+
+local function UpdateNotificationPositions()
+    for i, notif in ipairs(activeNotifications) do
+        if notif.frame and notif.frame.Parent then
+            local tweenService = game:GetService("TweenService")
+            local targetPos = UDim2.new(1, -380, 0, 20 + (i - 1) * 95)
+            local tween = tweenService:Create(notif.frame, 
+                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+                {Position = targetPos}
+            )
+            tween:Play()
+        end
+    end
+end
+
 local function CreateNotificationInternal(titleText, messageText, duration, textColorName, barColorName, linkUrl)
+    notificationId = notificationId + 1
+    local id = notificationId
+    
     local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
     
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NotificationGui"
+    screenGui.Name = "NotificationGui_" .. id
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = playerGui
     
     local notification = Instance.new("Frame")
     notification.Name = "NotificationFrame"
     notification.Size = UDim2.new(0, 360, 0, 85)
-    notification.Position = UDim2.new(1, 0, 0, 20)
+    notification.Position = UDim2.new(1, 0, 0, 20 + #activeNotifications * 95)
     notification.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     notification.BackgroundTransparency = 0.15
     notification.BorderSizePixel = 0
@@ -197,25 +217,39 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
     
     local slideIn = tweenService:Create(notification, 
         TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
-        {Position = UDim2.new(1, -380, 0, 20)}
+        {Position = UDim2.new(1, -380, 0, 20 + #activeNotifications * 95)}
     )
     slideIn:Play()
     
     local progressTween = nil
     if duration and duration > 0 then
-        task.wait(0.3)
-        if colorBar and colorBar.Parent then
-            progressTween = tweenService:Create(colorBar, 
-                TweenInfo.new(duration, Enum.EasingStyle.Linear), 
-                {Size = UDim2.new(0, 0, 0, 6)}
-            )
-            progressTween:Play()
-        end
+        progressTween = tweenService:Create(colorBar, 
+            TweenInfo.new(duration, Enum.EasingStyle.Linear), 
+            {Size = UDim2.new(0, 0, 0, 6)}
+        )
+        progressTween:Play()
     end
+    
+    local notifData = {
+        id = id,
+        frame = notification,
+        gui = screenGui,
+        progressTween = progressTween,
+        duration = duration
+    }
+    table.insert(activeNotifications, notifData)
+    UpdateNotificationPositions()
     
     local function DestroyNotification()
         if not notification or not notification.Parent then return end
         if progressTween then progressTween:Cancel() end
+        
+        for i, data in ipairs(activeNotifications) do
+            if data.id == id then
+                table.remove(activeNotifications, i)
+                break
+            end
+        end
         
         local slideOut = tweenService:Create(notification, 
             TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
@@ -235,6 +269,7 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
             if screenGui and screenGui.Parent then
                 screenGui:Destroy()
             end
+            UpdateNotificationPositions()
         end)
     end
     
@@ -243,37 +278,15 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
     end)
     
     if duration and duration > 0 then
-        task.wait(duration + 0.3)
-        if notification and notification.Parent then
-            DestroyNotification()
-        end
+        task.spawn(function()
+            task.wait(duration)
+            if notification and notification.Parent then
+                DestroyNotification()
+            end
+        end)
     end
     
     return notification
-end
-
-local notificationQueue = {}
-local isShowingNotification = false
-
-local function ShowNextNotification()
-    if isShowingNotification then return end
-    if #notificationQueue == 0 then return end
-    
-    isShowingNotification = true
-    local notifData = table.remove(notificationQueue, 1)
-    
-    CreateNotificationInternal(
-        notifData.title, 
-        notifData.message, 
-        notifData.duration, 
-        notifData.textColor, 
-        notifData.barColor,
-        notifData.linkUrl
-    )
-    
-    task.wait((notifData.duration or 3) + 0.8)
-    isShowingNotification = false
-    ShowNextNotification()
 end
 
 function NotificationLib.Show(title, message, duration, textColor, barColor, linkUrl)
@@ -281,15 +294,14 @@ function NotificationLib.Show(title, message, duration, textColor, barColor, lin
         return
     end
     
-    table.insert(notificationQueue, {
-        title = tostring(title),
-        message = tostring(message or ""),
-        duration = duration or 3,
-        textColor = textColor or "white",
-        barColor = barColor or "info",
-        linkUrl = linkUrl or nil
-    })
-    ShowNextNotification()
+    CreateNotificationInternal(
+        tostring(title),
+        tostring(message or ""),
+        duration or 3,
+        textColor or "white",
+        barColor or "info",
+        linkUrl or nil
+    )
 end
 
 function NotificationLib.Success(title, message, duration, linkUrl)
