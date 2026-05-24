@@ -1,0 +1,272 @@
+local NotificationLib = {}
+
+local Colors = {
+    white = Color3.fromRGB(255, 255, 255),
+    black = Color3.fromRGB(0, 0, 0),
+    red = Color3.fromRGB(255, 0, 0),
+    green = Color3.fromRGB(0, 255, 0),
+    blue = Color3.fromRGB(0, 0, 255),
+    yellow = Color3.fromRGB(255, 255, 0),
+    purple = Color3.fromRGB(128, 0, 128),
+    orange = Color3.fromRGB(255, 165, 0),
+    pink = Color3.fromRGB(255, 192, 203),
+    brown = Color3.fromRGB(139, 69, 19),
+    cyan = Color3.fromRGB(0, 255, 255),
+    magenta = Color3.fromRGB(255, 0, 255),
+    gray = Color3.fromRGB(128, 128, 128),
+    darkgray = Color3.fromRGB(64, 64, 64),
+    lightgray = Color3.fromRGB(211, 211, 211),
+    softred = Color3.fromRGB(255, 100, 100),
+    softgreen = Color3.fromRGB(100, 255, 100),
+    softblue = Color3.fromRGB(100, 100, 255),
+    softyellow = Color3.fromRGB(255, 255, 100),
+    softpurple = Color3.fromRGB(200, 100, 255),
+    softorange = Color3.fromRGB(255, 200, 100),
+    softpink = Color3.fromRGB(255, 150, 200),
+    brightred = Color3.fromRGB(255, 50, 50),
+    brightgreen = Color3.fromRGB(50, 255, 50),
+    brightblue = Color3.fromRGB(50, 150, 255),
+    brightyellow = Color3.fromRGB(255, 255, 50),
+    brightorange = Color3.fromRGB(255, 150, 50),
+    darkred = Color3.fromRGB(139, 0, 0),
+    darkgreen = Color3.fromRGB(0, 100, 0),
+    darkblue = Color3.fromRGB(0, 0, 139),
+    darkpurple = Color3.fromRGB(75, 0, 130),
+    darkorange = Color3.fromRGB(255, 140, 0),
+    gold = Color3.fromRGB(255, 215, 0),
+    silver = Color3.fromRGB(192, 192, 192),
+    bronze = Color3.fromRGB(205, 127, 50),
+    coral = Color3.fromRGB(255, 127, 80),
+    tomato = Color3.fromRGB(255, 99, 71),
+    lime = Color3.fromRGB(50, 205, 50),
+    olive = Color3.fromRGB(128, 128, 0),
+    teal = Color3.fromRGB(0, 128, 128),
+    navy = Color3.fromRGB(0, 0, 128),
+    maroon = Color3.fromRGB(128, 0, 0),
+    health = Color3.fromRGB(255, 50, 50),
+    mana = Color3.fromRGB(50, 100, 255),
+    exp = Color3.fromRGB(100, 255, 100),
+    warning = Color3.fromRGB(255, 165, 0),
+    error = Color3.fromRGB(255, 0, 0),
+    success = Color3.fromRGB(0, 255, 0),
+    info = Color3.fromRGB(66, 133, 244),
+}
+
+local function getColor(colorName, defaultColor)
+    if type(colorName) == "string" then
+        local color = Colors[colorName:lower()]
+        if color then
+            return color
+        else
+            return defaultColor or Color3.fromRGB(255, 255, 255)
+        end
+    elseif type(colorName) == "table" and colorName.R and colorName.G and colorName.B then
+        return colorName
+    else
+        return defaultColor or Color3.fromRGB(255, 255, 255)
+    end
+end
+
+local function CreateNotificationInternal(titleText, messageText, duration, textColorName, barColorName)
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "NotificationGui"
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = playerGui
+    
+    local notification = Instance.new("Frame")
+    notification.Name = "NotificationFrame"
+    notification.Size = UDim2.new(0, 360, 0, 85)
+    notification.Position = UDim2.new(1, 0, 0, 20)
+    notification.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    notification.BorderSizePixel = 0
+    notification.ClipsDescendants = true
+    notification.Parent = screenGui
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 10)
+    uiCorner.Parent = notification
+    
+    local colorBar = Instance.new("Frame")
+    colorBar.Name = "ColorBar"
+    colorBar.Size = UDim2.new(1, 0, 0, 6)
+    colorBar.Position = UDim2.new(0, 0, 0, 0)
+    colorBar.BackgroundColor3 = getColor(barColorName, Color3.fromRGB(66, 133, 244))
+    colorBar.BorderSizePixel = 0
+    colorBar.Parent = notification
+    
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 5)
+    barCorner.Parent = colorBar
+    
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -45, 0, 35)
+    title.Position = UDim2.new(0, 15, 0, 12)
+    title.BackgroundTransparency = 1
+    title.Text = titleText or "通知"
+    title.TextColor3 = getColor(textColorName, Color3.fromRGB(255, 255, 255))
+    title.TextSize = 18
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.TextYAlignment = Enum.TextYAlignment.Top
+    title.Font = Enum.Font.GothamBold
+    title.Parent = notification
+    
+    local message = Instance.new("TextLabel")
+    message.Name = "Message"
+    message.Size = UDim2.new(1, -45, 0, 35)
+    message.Position = UDim2.new(0, 15, 0, 45)
+    message.BackgroundTransparency = 1
+    message.Text = messageText or ""
+    message.TextColor3 = getColor(textColorName, Color3.fromRGB(200, 200, 200))
+    message.TextSize = 14
+    message.TextXAlignment = Enum.TextXAlignment.Left
+    message.TextYAlignment = Enum.TextYAlignment.Top
+    message.TextWrapped = true
+    message.Font = Enum.Font.Gotham
+    message.Parent = notification
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 28, 0, 28)
+    closeButton.Position = UDim2.new(1, -36, 0, 8)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Text = "✕"
+    closeButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.Gotham
+    closeButton.BorderSizePixel = 0
+    closeButton.Parent = notification
+    
+    closeButton.MouseEnter:Connect(function()
+        closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end)
+    closeButton.MouseLeave:Connect(function()
+        closeButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+    end)
+    
+    local tweenService = game:GetService("TweenService")
+    
+    local slideIn = tweenService:Create(notification, 
+        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+        {Position = UDim2.new(1, -380, 0, 20)}
+    )
+    slideIn:Play()
+    
+    local progressTween = nil
+    if duration and duration > 0 then
+        task.wait(0.3)
+        if colorBar and colorBar.Parent then
+            progressTween = tweenService:Create(colorBar, 
+                TweenInfo.new(duration, Enum.EasingStyle.Linear), 
+                {Size = UDim2.new(0, 0, 0, 6)}
+            )
+            progressTween:Play()
+        end
+    end
+    
+    local function DestroyNotification()
+        if not notification or not notification.Parent then return end
+        if progressTween then progressTween:Cancel() end
+        
+        local slideOut = tweenService:Create(notification, 
+            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+            {Position = UDim2.new(1, 0, 0, 20)}
+        )
+        
+        for _, child in ipairs(notification:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                local tween = tweenService:Create(child, TweenInfo.new(0.25), 
+                    {BackgroundTransparency = 1, TextTransparency = 1})
+                tween:Play()
+            end
+        end
+        
+        slideOut:Play()
+        slideOut.Completed:Connect(function()
+            if screenGui and screenGui.Parent then
+                screenGui:Destroy()
+            end
+        end)
+    end
+    
+    closeButton.MouseButton1Click:Connect(function()
+        DestroyNotification()
+    end)
+    
+    if duration and duration > 0 then
+        task.wait(duration + 0.3)
+        if notification and notification.Parent then
+            DestroyNotification()
+        end
+    end
+    
+    return notification
+end
+
+local notificationQueue = {}
+local isShowingNotification = false
+
+local function ShowNextNotification()
+    if isShowingNotification then return end
+    if #notificationQueue == 0 then return end
+    
+    isShowingNotification = true
+    local notifData = table.remove(notificationQueue, 1)
+    
+    CreateNotificationInternal(
+        notifData.title, 
+        notifData.message, 
+        notifData.duration, 
+        notifData.textColor, 
+        notifData.barColor
+    )
+    
+    task.wait((notifData.duration or 3) + 0.8)
+    isShowingNotification = false
+    ShowNextNotification()
+end
+
+function NotificationLib.Show(title, message, duration, textColor, barColor)
+    if not title then
+        return
+    end
+    
+    table.insert(notificationQueue, {
+        title = tostring(title),
+        message = tostring(message or ""),
+        duration = duration or 3,
+        textColor = textColor or "white",
+        barColor = barColor or "info"
+    })
+    ShowNextNotification()
+end
+
+function NotificationLib.Success(title, message, duration)
+    NotificationLib.Show(title, message, duration, "white", "success")
+end
+
+function NotificationLib.Error(title, message, duration)
+    NotificationLib.Show(title, message, duration, "white", "error")
+end
+
+function NotificationLib.Warning(title, message, duration)
+    NotificationLib.Show(title, message, duration, "white", "warning")
+end
+
+function NotificationLib.Info(title, message, duration)
+    NotificationLib.Show(title, message, duration, "white", "info")
+end
+
+function NotificationLib.GetColors()
+    local colorList = {}
+    for name, _ in pairs(Colors) do
+        table.insert(colorList, name)
+    end
+    table.sort(colorList)
+    return colorList
+end
+
+return NotificationLib
