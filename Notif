@@ -67,7 +67,7 @@ local function getColor(colorName, defaultColor)
     end
 end
 
-local function CreateNotificationInternal(titleText, messageText, duration, textColorName, barColorName)
+local function CreateNotificationInternal(titleText, messageText, duration, textColorName, barColorName, linkUrl)
     local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
     
@@ -80,7 +80,8 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
     notification.Name = "NotificationFrame"
     notification.Size = UDim2.new(0, 360, 0, 85)
     notification.Position = UDim2.new(1, 0, 0, 20)
-    notification.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    notification.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    notification.BackgroundTransparency = 0.15
     notification.BorderSizePixel = 0
     notification.ClipsDescendants = true
     notification.Parent = screenGui
@@ -94,6 +95,7 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
     colorBar.Size = UDim2.new(1, 0, 0, 6)
     colorBar.Position = UDim2.new(0, 0, 0, 0)
     colorBar.BackgroundColor3 = getColor(barColorName, Color3.fromRGB(66, 133, 244))
+    colorBar.BackgroundTransparency = 0
     colorBar.BorderSizePixel = 0
     colorBar.Parent = notification
     
@@ -139,6 +141,50 @@ local function CreateNotificationInternal(titleText, messageText, duration, text
     closeButton.Font = Enum.Font.Gotham
     closeButton.BorderSizePixel = 0
     closeButton.Parent = notification
+    
+    local function openLink()
+        if linkUrl then
+            setclipboard(linkUrl)
+            if syn and syn.request then
+                syn.request({
+                    Url = linkUrl,
+                    Method = "GET"
+                })
+            end
+        end
+    end
+    
+    if linkUrl then
+        local linkButton = Instance.new("TextButton")
+        linkButton.Name = "LinkButton"
+        linkButton.Size = UDim2.new(0, 80, 0, 25)
+        linkButton.Position = UDim2.new(1, -120, 0, 52)
+        linkButton.BackgroundTransparency = 0.2
+        linkButton.BackgroundColor3 = getColor(barColorName, Color3.fromRGB(66, 133, 244))
+        linkButton.Text = "打开链接"
+        linkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        linkButton.TextSize = 12
+        linkButton.Font = Enum.Font.GothamBold
+        linkButton.BorderSizePixel = 0
+        linkButton.Parent = notification
+        
+        local linkCorner = Instance.new("UICorner")
+        linkCorner.CornerRadius = UDim.new(0, 4)
+        linkCorner.Parent = linkButton
+        
+        linkButton.MouseButton1Click:Connect(function()
+            openLink()
+        end)
+        
+        linkButton.MouseEnter:Connect(function()
+            linkButton.BackgroundColor3 = getColor(barColorName, Color3.fromRGB(66, 133, 244))
+            linkButton.BackgroundTransparency = 0
+        end)
+        
+        linkButton.MouseLeave:Connect(function()
+            linkButton.BackgroundTransparency = 0.2
+        end)
+    end
     
     closeButton.MouseEnter:Connect(function()
         closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -221,7 +267,8 @@ local function ShowNextNotification()
         notifData.message, 
         notifData.duration, 
         notifData.textColor, 
-        notifData.barColor
+        notifData.barColor,
+        notifData.linkUrl
     )
     
     task.wait((notifData.duration or 3) + 0.8)
@@ -229,7 +276,7 @@ local function ShowNextNotification()
     ShowNextNotification()
 end
 
-function NotificationLib.Show(title, message, duration, textColor, barColor)
+function NotificationLib.Show(title, message, duration, textColor, barColor, linkUrl)
     if not title then
         return
     end
@@ -239,25 +286,30 @@ function NotificationLib.Show(title, message, duration, textColor, barColor)
         message = tostring(message or ""),
         duration = duration or 3,
         textColor = textColor or "white",
-        barColor = barColor or "info"
+        barColor = barColor or "info",
+        linkUrl = linkUrl or nil
     })
     ShowNextNotification()
 end
 
-function NotificationLib.Success(title, message, duration)
-    NotificationLib.Show(title, message, duration, "white", "success")
+function NotificationLib.Success(title, message, duration, linkUrl)
+    NotificationLib.Show(title, message, duration, "white", "success", linkUrl)
 end
 
-function NotificationLib.Error(title, message, duration)
-    NotificationLib.Show(title, message, duration, "white", "error")
+function NotificationLib.Error(title, message, duration, linkUrl)
+    NotificationLib.Show(title, message, duration, "white", "error", linkUrl)
 end
 
-function NotificationLib.Warning(title, message, duration)
-    NotificationLib.Show(title, message, duration, "white", "warning")
+function NotificationLib.Warning(title, message, duration, linkUrl)
+    NotificationLib.Show(title, message, duration, "white", "warning", linkUrl)
 end
 
-function NotificationLib.Info(title, message, duration)
-    NotificationLib.Show(title, message, duration, "white", "info")
+function NotificationLib.Info(title, message, duration, linkUrl)
+    NotificationLib.Show(title, message, duration, "white", "info", linkUrl)
+end
+
+function NotificationLib.Link(title, message, url, duration, textColor, barColor)
+    NotificationLib.Show(title, message, duration or 5, textColor or "white", barColor or "info", url)
 end
 
 function NotificationLib.GetColors()
